@@ -3,7 +3,6 @@ package de.gematik.kether.codegen
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import org.junit.Test
-import java.io.File
 
 /**
  * Created by rk on 20.09.2022.
