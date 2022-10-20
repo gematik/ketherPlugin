@@ -13,7 +13,7 @@ import de.gematik.kether.extensions.keccak
 import kotlinx.serialization.ExperimentalSerializationApi
 
 @OptIn(ExperimentalSerializationApi::class)
-class `ScumaContract.ref`(
+class ScumaContract(
     eth: Eth,
     baseTransaction: Transaction = Transaction()
 ) : Contract(eth, baseTransaction) {
@@ -40,6 +40,41 @@ class `ScumaContract.ref`(
         val functionRequestPermissions = "requestPermissions(address,(uint256,uint8)[])".keccak().copyOfRange(0, 4)
         val functionSetRule = "setRule(uint256,address,uint8)".keccak().copyOfRange(0, 4)
         val functionUnregisterResource = "unregisterResource(uint256)".keccak().copyOfRange(0, 4)
+    }
+
+    // tuples
+    data class PermissionRequest(val protectedResourceId: AbiUint256, val requestedMethod: AbiUint8) : AbiTuple {
+        constructor(dataDecoder: DataDecoder) : this(
+            dataDecoder.next(AbiUint256::class),
+            dataDecoder.next(AbiUint8::class)
+        )
+
+        override fun encode(): DataEncoder {
+            return DataEncoder()
+                .encode(protectedResourceId)
+                .encode(requestedMethod)
+        }
+
+        companion object : Dynamic {
+            override fun isDynamic() = isTypeDynamic(AbiUint256) || isTypeDynamic(AbiUint8)
+        }
+    }
+
+    data class Permission(val protectedResourceId: AbiUint256, val grantedMethod: AbiUint8) : AbiTuple {
+        constructor(dataDecoder: DataDecoder) : this(
+            dataDecoder.next(AbiUint256::class),
+            dataDecoder.next(AbiUint8::class)
+        )
+
+        override fun encode(): DataEncoder {
+            return DataEncoder()
+                .encode(protectedResourceId)
+                .encode(grantedMethod)
+        }
+
+        companion object : Dynamic {
+            override fun isDynamic() = isTypeDynamic(AbiUint256) || isTypeDynamic(AbiUint8)
+        }
     }
 
     // events
@@ -87,26 +122,6 @@ class `ScumaContract.ref`(
         return transact(params)
     }
 
-    data class PermissionRequest(val protectedResourceId: AbiUint256, val grantedMethod: AbiUint8) : AbiTuple {
-        override fun encode(): DataEncoder {
-            return DataEncoder()
-                .encode(protectedResourceId)
-                .encode(grantedMethod)
-        }
-    }
-
-    data class Permission(val protectedResourceId: AbiUint256, val grantedMethod: AbiUint8) : AbiTuple {
-        constructor(dataDecoder: DataDecoder) : this(
-            dataDecoder.next(AbiUint32::class),
-            dataDecoder.next(AbiUint8::class)
-        )
-
-        companion object : Dynamic {
-            override fun isDynamic() = isTypeDynamic(AbiUint32::class) || isTypeDynamic(AbiUint8::class)
-        }
-    }
-
-    @Suppress("UNCHECKED_CAST")
     fun requestPermissions(userId: AbiAddress, permissionRequests: List<PermissionRequest>): List<Permission> {
         val params = DataEncoder()
             .encode(Data4(functionRequestPermissions))

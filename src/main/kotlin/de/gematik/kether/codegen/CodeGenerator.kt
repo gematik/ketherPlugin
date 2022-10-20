@@ -1,7 +1,9 @@
 package de.gematik.kether.codegen
 
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -32,6 +34,7 @@ class CodeGenerator(
     private val template = """package $packageName
         import de.gematik.kether.abi.DataDecoder
         import de.gematik.kether.abi.DataEncoder
+        import de.gematik.kether.abi.isTypeDynamic
         import de.gematik.kether.abi.types.*
         import de.gematik.kether.contracts.Contract
         import de.gematik.kether.contracts.Event
@@ -55,6 +58,9 @@ class CodeGenerator(
                 // 4 byte selectors (functions) and topics (events)
                 ${generateSelectors()}
             }
+
+            // tuples
+            ${generateTuples()}
 
             // events
             ${generateEvents()}
@@ -88,7 +94,7 @@ class CodeGenerator(
             stringBuilder.append("fun deploy(eth:Eth, from: Address) = deploy(eth, from, Data(byteCode))")
         }
         constructors.forEach {
-            stringBuilder.append("fun deploy(eth:Eth, from: Address, ")
+            stringBuilder.append("fun deploy(eth:Eth, from: Address,")
             stringBuilderParams.append("val params = Data(\nbyteCode + DataEncoder()\n")
             it.inputs?.forEach {
                 stringBuilder.append("${it.name}: Abi${it.type.replaceFirstChar(Char::titlecase)},")
@@ -111,7 +117,7 @@ class CodeGenerator(
             it.name?.let { name ->
                 stringBuilder.append("val event${name.replaceFirstChar(Char::titlecase)} = Data32(\"$name(")
                 it.inputs?.forEach {
-                    stringBuilder.append(it.type + ",")
+                    stringBuilder.append(it.signatureOfType() + ",")
                 }
                 if (stringBuilder.last() == ',') {
                     stringBuilder.deleteAt(stringBuilder.length - 1)
@@ -127,7 +133,7 @@ class CodeGenerator(
             it.name!!.let { name ->
                 stringBuilder.append("val function${name.replaceFirstChar(Char::titlecase)} = \"$name(")
                 it.inputs?.forEach {
-                    stringBuilder.append(it.type + ",")
+                    stringBuilder.append(it.signatureOfType() + ",")
                 }
                 if (stringBuilder.last() == ',') {
                     stringBuilder.deleteAt(stringBuilder.length - 1)
@@ -136,6 +142,50 @@ class CodeGenerator(
                     ")\".keccak().copyOfRange(0, 4)\n"
                 )
             }
+        }
+        return stringBuilder.toString()
+    }
+
+    private fun generateTuples(): String {
+        val stringBuilder = StringBuilder()
+        val tuples = mutableListOf<Component>()
+        abi.forEach { it.inputs?.let { inputs -> tuples.addAll(inputs.getAllTuples()) } }
+        abi.forEach { it.outputs?.let { outputs -> tuples.addAll(outputs.getAllTuples()) } }
+        tuples.forEach {
+            stringBuilder.append("data class ${it.typeNameStrippedDimension}${it.components?.params() ?: ""} : AbiTuple {\n")
+            // decoder
+            stringBuilder.append("constructor(dataDecoder: DataDecoder) : this(")
+            it.components?.forEach {
+                stringBuilder.append("dataDecoder.next(${it.typeNameStrippedDimension}::class),")
+            }
+            if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
+            stringBuilder.append(")")
+            // encoder
+            stringBuilder.append("override fun encode(): DataEncoder {\n")
+            stringBuilder.append("return DataEncoder()\n")
+            it.components?.forEach {
+                stringBuilder.append(".encode(${it.name})\n")
+            }
+            stringBuilder.append("}\n")
+            // companion object
+            stringBuilder.append("companion object : Dynamic {\n")
+            stringBuilder.append("override fun isDynamic() = ")
+            var isDynamic = false
+            it.components?.forEach {
+                if (it.dimensions.contains("-1")) isDynamic = true
+            }
+            if (isDynamic) {
+                stringBuilder.append("true")
+            } else {
+                it.components?.forEach {
+                    stringBuilder.append("isTypeDynamic(${it.typeNameStrippedDimension}::class)||")
+                }
+                if (stringBuilder.last() == '|') stringBuilder.delete(
+                    stringBuilder.length - 2,
+                    stringBuilder.length
+                )
+            }
+            stringBuilder.append("}\n}\n")
         }
         return stringBuilder.toString()
     }
@@ -206,7 +256,7 @@ class CodeGenerator(
                         val name = it.name?.let {
                             if (it.isEmpty()) "value" else it
                         } ?: ""
-                        stringBuilder.append("val $name: Abi${it.type.replaceFirstChar(Char::titlecase)}\n")
+                        stringBuilder.append("val $name: ${it.typeName}\n")
                     }
                     stringBuilder.append(")\n")
                 }
@@ -221,8 +271,9 @@ class CodeGenerator(
                         }))"
                     )
                     it.inputs?.forEach {
-                        stringBuilder.append("${it.name}: Abi${it.type.replaceFirstChar(Char::titlecase)},")
-                        stringBuilderParams.append("\n.encode(${it.name})")
+                        stringBuilder.append("${it.name}: ${it.typeName},")
+                        stringBuilderParams.append("\n.encode(${it.name}")
+                        stringBuilderParams.append(if (it.dimensions.isNotEmpty()) ", ${it.dimensions})" else ")")
                     }
                     stringBuilderParams.append(".build()\n")
                     if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
@@ -239,19 +290,20 @@ class CodeGenerator(
                         }))"
                     )
                     it.inputs?.forEach {
-                        stringBuilder.append("${it.name}: Abi${it.type.replaceFirstChar(Char::titlecase)},")
-                        stringBuilderParams.append("\n.encode(${it.name})")
+                        stringBuilder.append("${it.name}: ${it.typeName},")
+                        stringBuilderParams.append("\n.encode(${it.name}")
+                        stringBuilderParams.append(if (it.dimensions.isNotEmpty()) ", ${it.dimensions})" else ")")
                     }
                     stringBuilderParams.append(".build()\n")
                     if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
                     if (it.outputs != null && it.outputs.size == 1) {
-                        resultClassName = "Abi${it.outputs[0].type.replaceFirstChar(kotlin.Char::titlecase)}"
+                        resultClassName = it.outputs[0].typeName
                     }
                     stringBuilder.append(if (resultClassName != null) "): $resultClassName {\n" else "){\n")
                     stringBuilder.append(stringBuilderParams.toString())
                     stringBuilder.append("val decoder = DataDecoder(call(params))\n")
                     if (it.outputs != null && it.outputs.size == 1) {
-                        stringBuilder.append("return decoder.next(Abi${it.outputs[0].type.replaceFirstChar(Char::titlecase)}::class)")
+                        stringBuilder.append("return decoder.next(${it.outputs[0].typeNameStrippedDimension}::class, ${it.outputs[0].dimensions}) as ${it.outputs[0].typeName}")
                     } else {
                         stringBuilder.append("return $resultClassName(\ndecoder")
                         it.outputs?.forEach {
