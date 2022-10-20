@@ -1,7 +1,10 @@
 package de.gematik.kether.codegen
 
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import java.io.File
+
+private val json = Json { ignoreUnknownKeys = true }
 
 /**
  * Created by rk on 20.09.2022.
@@ -11,15 +14,19 @@ import java.io.File
 class CodeGenerator(
     packageName: String,
     contractName: String,
-    private val abi: JsonArray,
+    private val abi: Array<Type>,
     private val byteCode: String? = null
 ) {
     constructor(packageName: String, abiFile: File, byteCodeFile: File?) : this(
         packageName,
         abiFile.name.substring(0, abiFile.name.indexOfLast { it == '.' }),
-        abi = Json.parseToJsonElement(abiFile.readText(Charsets.UTF_8)).jsonArray,
+        abi = json.decodeFromString(abiFile.readText(Charsets.UTF_8)),
         byteCode = byteCodeFile?.let {
-            Json.parseToJsonElement(it.readText(Charsets.UTF_8)).jsonObject.get("object")?.jsonPrimitive?.content
+            when (it.extension.lowercase()) {
+                "bytecode" -> Json.parseToJsonElement(it.readText(Charsets.UTF_8)).jsonObject.get("object")?.jsonPrimitive?.content
+                "bin" -> it.readText(Charsets.UTF_8)
+                else -> error("wrong extension of binary file")
+            }
         })
 
     private val template = """package $packageName
@@ -74,7 +81,7 @@ class CodeGenerator(
         val stringBuilder = StringBuilder()
         val stringBuilderParams = StringBuilder()
         val constructors = abi.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "constructor"
+            it.type == "constructor"
         }
         stringBuilder.append("val byteCode = \"0x$byteCode\".hexToByteArray()\n")
         if (constructors.isEmpty()) {
@@ -83,13 +90,9 @@ class CodeGenerator(
         constructors.forEach {
             stringBuilder.append("fun deploy(eth:Eth, from: Address, ")
             stringBuilderParams.append("val params = Data(\nbyteCode + DataEncoder()\n")
-            it.jsonObject["inputs"]?.jsonArray?.forEach {
-                val name = it.jsonObject.get("name")?.jsonPrimitive?.content
-                val type = it.jsonObject.get("type")?.jsonPrimitive?.content
-                if (name != null || type != null) {
-                    stringBuilder.append("$name: Abi${type?.replaceFirstChar(Char::titlecase)},")
-                    stringBuilderParams.append(".encode($name)")
-                }
+            it.inputs?.forEach {
+                stringBuilder.append("${it.name}: Abi${it.type.replaceFirstChar(Char::titlecase)},")
+                stringBuilderParams.append(".encode(${it.name})")
             }
             stringBuilderParams.append(".build().toByteArray()\n)\n")
             if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
@@ -103,14 +106,12 @@ class CodeGenerator(
     private fun generateSelectors(): String {
         val stringBuilder = StringBuilder()
         abi.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "event"
+            it.type == "event"
         }.forEach {
-            it.jsonObject["name"]?.jsonPrimitive?.content?.let { name ->
+            it.name?.let { name ->
                 stringBuilder.append("val event${name.replaceFirstChar(Char::titlecase)} = Data32(\"$name(")
-                it.jsonObject["inputs"]?.jsonArray?.forEach {
-                    it.jsonObject.get("type")?.jsonPrimitive?.content?.let {
-                        stringBuilder.append(it + ",")
-                    }
+                it.inputs?.forEach {
+                    stringBuilder.append(it.type + ",")
                 }
                 if (stringBuilder.last() == ',') {
                     stringBuilder.deleteAt(stringBuilder.length - 1)
@@ -121,14 +122,12 @@ class CodeGenerator(
             }
         }
         abi.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "function"
+            it.type == "function"
         }.forEach {
-            it.jsonObject["name"]?.jsonPrimitive?.content?.let { name ->
+            it.name!!.let { name ->
                 stringBuilder.append("val function${name.replaceFirstChar(Char::titlecase)} = \"$name(")
-                it.jsonObject["inputs"]?.jsonArray?.forEach {
-                    it.jsonObject.get("type")?.jsonPrimitive?.content?.let {
-                        stringBuilder.append(it + ",")
-                    }
+                it.inputs?.forEach {
+                    stringBuilder.append(it.type + ",")
                 }
                 if (stringBuilder.last() == ',') {
                     stringBuilder.deleteAt(stringBuilder.length - 1)
@@ -145,11 +144,10 @@ class CodeGenerator(
         val stringBuilder = StringBuilder()
         val stringBuilderEventDecoders = StringBuilder()
         abi.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "event"
+            it.type == "event"
         }.forEach {
-            val eventName = it.jsonObject["name"]?.jsonPrimitive?.content
-            if (eventName != null) {
-                val eventClassName = "Event${eventName.replaceFirstChar(Char::titlecase)}"
+            if (it.name != null) {
+                val eventClassName = "Event${it.name.replaceFirstChar(Char::titlecase)}"
                 stringBuilderEventDecoders.append("$eventClassName::decoder,")
                 stringBuilder.append("data class $eventClassName(")
                 stringBuilder.append("val eventSelector: AbiBytes32,")
@@ -159,21 +157,16 @@ class CodeGenerator(
                 val stringBuilderArguments = StringBuilder()
                 stringBuilderArguments.append("eventSelector=log.topics!!.get(0),")
                 var index = 1
-                it.jsonObject["inputs"]?.jsonArray?.forEach {
-                    val type = it.jsonObject.get("type")?.jsonPrimitive?.content
-                    val name = it.jsonObject.get("name")?.jsonPrimitive?.content
-                    if (type != null && name != null) {
-                        val isIndexed = it.jsonObject.get("indexed")?.jsonPrimitive?.boolean
-                        if (isIndexed == true) {
-                            stringBuilder.append("val $name: AbiBytes32,")
-                            stringBuilderTopics.append("$name,")
-                            stringBuilderArguments.append("$name = log.topics!!.get(${index++}),")
-                        } else {
-                            val abiTypeName = "Abi${type.replaceFirstChar(Char::titlecase)}"
-                            stringBuilder.append("val $name: $abiTypeName,")
-                            stringBuilderValues.append("val $name = decoder.next<$abiTypeName>()\n")
-                            stringBuilderArguments.append("$name = $name,")
-                        }
+                it.inputs?.forEach {
+                    if (it.indexed == true) {
+                        stringBuilder.append("val ${it.name}: AbiBytes32,")
+                        stringBuilderTopics.append("${it.name},")
+                        stringBuilderArguments.append("${it.name} = log.topics!!.get(${index++}),")
+                    } else {
+                        val abiTypeName = "Abi${it.type.replaceFirstChar(Char::titlecase)}"
+                        stringBuilder.append("val ${it.name}: $abiTypeName,")
+                        stringBuilderValues.append("val ${it.name} = decoder.next($abiTypeName::class)\n")
+                        stringBuilderArguments.append("${it.name} = ${it.name},")
                     }
                 }
                 if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
@@ -181,7 +174,7 @@ class CodeGenerator(
                 stringBuilder.append(") : Event(topics = listOf(${stringBuilderTopics})) {\n")
                 stringBuilder.append("companion object {\n")
                 stringBuilder.append("fun decoder(log: Log): Event? {\n")
-                stringBuilder.append("return checkEvent(log, event$eventName)?.let {\n")
+                stringBuilder.append("return checkEvent(log, event${it.name})?.let {\n")
                 stringBuilder.append("val decoder = DataDecoder(log.data!!)\n")
                 stringBuilder.append(stringBuilderValues)
                 stringBuilder.append("$eventClassName(\n")
@@ -200,45 +193,36 @@ class CodeGenerator(
     private fun generateFunctions(): String {
         val stringBuilder = StringBuilder()
         abi.filter {
-            it.jsonObject["type"]?.jsonPrimitive?.content == "function"
+            it.type == "function"
         }.forEach {
-            val functionName = it.jsonObject["name"]?.jsonPrimitive?.content
-            if (functionName != null) {
-                val stateMutability =
-                    it.jsonObject["stateMutability"]?.jsonPrimitive?.content?.let { StateMutability.valueOf(it) }
-                val outputs = it.jsonObject["outputs"]?.jsonArray
+            if (it.name != null) {
+                val stateMutability = it.stateMutability?.let { StateMutability.valueOf(it) }
                 var resultClassName: String? = null
-                if (outputs!= null && outputs.size > 1 && stateMutability != StateMutability.payable && stateMutability != StateMutability.nonpayable
+                if (it.outputs != null && it.outputs.size > 1 && stateMutability != StateMutability.payable && stateMutability != StateMutability.nonpayable
                 ) {
-                    resultClassName = "Results${functionName.replaceFirstChar(Char::titlecase)}"
+                    resultClassName = "Results${it.name.replaceFirstChar(Char::titlecase)}"
                     stringBuilder.append("data class $resultClassName(\n")
-                    outputs.forEach {
-                        val name = it.jsonObject.get("name")?.jsonPrimitive?.content?.let {
+                    it.outputs.forEach {
+                        val name = it.name?.let {
                             if (it.isEmpty()) "value" else it
                         } ?: ""
-                        val type = it.jsonObject.get("type")?.jsonPrimitive?.content
-                        if (type != null) stringBuilder.append("val $name: Abi${type.replaceFirstChar(Char::titlecase)}\n")
+                        stringBuilder.append("val $name: Abi${it.type.replaceFirstChar(Char::titlecase)}\n")
                     }
                     stringBuilder.append(")\n")
                 }
                 val stringBuilderParams = StringBuilder()
-                val inputs = it.jsonObject["inputs"]?.jsonArray
                 if (stateMutability == StateMutability.payable || stateMutability == StateMutability.nonpayable) {
-                    stringBuilder.append("suspend fun $functionName(")
+                    stringBuilder.append("suspend fun ${it.name}(")
                     stringBuilderParams.append(
                         "val params = DataEncoder()\n.encode(Data4(function${
-                            functionName.replaceFirstChar(
+                            it.name.replaceFirstChar(
                                 Char::titlecase
                             )
                         }))"
                     )
-                    inputs?.forEach {
-                        val name = it.jsonObject.get("name")?.jsonPrimitive?.content
-                        val type = it.jsonObject.get("type")?.jsonPrimitive?.content
-                        if (name != null || type == null) {
-                            stringBuilder.append("$name: Abi${type?.replaceFirstChar(Char::titlecase)},")
-                            stringBuilderParams.append("\n.encode($name)")
-                        }
+                    it.inputs?.forEach {
+                        stringBuilder.append("${it.name}: Abi${it.type.replaceFirstChar(Char::titlecase)},")
+                        stringBuilderParams.append("\n.encode(${it.name})")
                     }
                     stringBuilderParams.append(".build()\n")
                     if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
@@ -246,36 +230,31 @@ class CodeGenerator(
                     stringBuilder.append(stringBuilderParams.toString())
                     stringBuilder.append("return transact(params)\n}\n")
                 } else {
-                    stringBuilder.append("fun $functionName(")
+                    stringBuilder.append("fun ${it.name}(")
                     stringBuilderParams.append(
                         "val params = DataEncoder()\n.encode(Data4(function${
-                            functionName.replaceFirstChar(
+                            it.name.replaceFirstChar(
                                 Char::titlecase
                             )
                         }))"
                     )
-                    inputs?.forEach {
-                        val name = it.jsonObject.get("name")?.jsonPrimitive?.content
-                        val type = it.jsonObject.get("type")?.jsonPrimitive?.content
-                        if (name != null || type == null) {
-                            stringBuilder.append("$name: Abi${type?.replaceFirstChar(Char::titlecase)},")
-                            stringBuilderParams.append("\n.encode($name)")
-                        }
+                    it.inputs?.forEach {
+                        stringBuilder.append("${it.name}: Abi${it.type.replaceFirstChar(Char::titlecase)},")
+                        stringBuilderParams.append("\n.encode(${it.name})")
                     }
                     stringBuilderParams.append(".build()\n")
                     if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
-                    if (outputs!=null && outputs.size == 1){
-                        val type = outputs[0].jsonObject.get("type")?.jsonPrimitive?.content
-                        resultClassName = "Abi${type?.replaceFirstChar(kotlin.Char::titlecase)}"
+                    if (it.outputs != null && it.outputs.size == 1) {
+                        resultClassName = "Abi${it.outputs[0].type.replaceFirstChar(kotlin.Char::titlecase)}"
                     }
                     stringBuilder.append(if (resultClassName != null) "): $resultClassName {\n" else "){\n")
                     stringBuilder.append(stringBuilderParams.toString())
                     stringBuilder.append("val decoder = DataDecoder(call(params))\n")
-                    if (outputs!=null && outputs.size == 1) {
-                        stringBuilder.append("return decoder.next()")
+                    if (it.outputs != null && it.outputs.size == 1) {
+                        stringBuilder.append("return decoder.next(Abi${it.outputs[0].type.replaceFirstChar(Char::titlecase)}::class)")
                     } else {
                         stringBuilder.append("return $resultClassName(\ndecoder")
-                        outputs?.filter { it.jsonObject["type"] != null }?.forEach {
+                        it.outputs?.forEach {
                             stringBuilder.append("\n.next()")
                         }
                         stringBuilder.append(")\n")
