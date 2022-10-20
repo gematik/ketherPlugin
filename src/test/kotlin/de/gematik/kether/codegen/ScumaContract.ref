@@ -13,7 +13,7 @@ import de.gematik.kether.extensions.keccak
 import kotlinx.serialization.ExperimentalSerializationApi
 
 @OptIn(ExperimentalSerializationApi::class)
-class ScumaContract(
+class `ScumaContract.ref`(
     eth: Eth,
     baseTransaction: Transaction = Transaction()
 ) : Contract(eth, baseTransaction) {

@@ -194,7 +194,7 @@ class CodeGenTest {
         val json = Json { ignoreUnknownKeys = true }
         val code = CodeGenerator("de.gematik.kether.codegen", "HelloWorld", json.decodeFromString(abi), byteCode).generateCode()
         assert(code.startsWith("package de.gematik.kether.codegen"))
-        File("src/test/kotlin/de/gematik/kether/codegen/ScumaContract.kt").writeText(code)
+        File("src/test/kotlin/de/gematik/kether/codegen/ScumaContract.ref").writeText(code)
     }
 
 }
