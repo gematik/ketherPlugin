@@ -1,0 +1,172 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "protectionAuthorizationId",
+        "type": "address"
+      }
+    ],
+    "name": "RegisterProvider",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UnregisterAllProviders",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "UnregisterAllResources",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "protectionAuthorizationId",
+        "type": "address"
+      }
+    ],
+    "name": "UnregisterProvider",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "protectedResourceId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "index",
+        "type": "uint256"
+      }
+    ],
+    "name": "deleteRule",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "protectedResourceId",
+        "type": "uint256"
+      }
+    ],
+    "name": "registerResource",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "userId",
+        "type": "address"
+      },
+      {
+        "components":
+        [
+          {
+            "internalType": "uint256",
+            "name": "protectedResourceId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum ScumaContract.AccessMethod",
+            "name": "requestedMethod",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ScumaContract.PermissionRequest[]",
+        "name": "permissionRequests",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "requestPermissions",
+    "outputs":
+    [
+      {
+        "components":
+        [
+          {
+            "internalType": "uint256",
+            "name": "protectedResourceId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "enum ScumaContract.AccessMethod",
+            "name": "grantedMethod",
+            "type": "uint8"
+          }
+        ],
+        "internalType": "struct ScumaContract.Permission[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "protectedResourceId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "userId",
+        "type": "address"
+      },
+      {
+        "internalType": "enum ScumaContract.AccessMethod",
+        "name": "method",
+        "type": "uint8"
+      }
+    ],
+    "name": "setRule",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "uint256",
+        "name": "protectedResourceId",
+        "type": "uint256"
+      }
+    ],
+    "name": "unregisterResource",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

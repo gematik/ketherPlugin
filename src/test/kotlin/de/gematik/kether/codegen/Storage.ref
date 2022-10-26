@@ -1,0 +1,48 @@
+package de.gematik.kether.codegen
+import de.gematik.kether.abi.DataDecoder
+import de.gematik.kether.abi.DataEncoder
+import de.gematik.kether.abi.isTypeDynamic
+import de.gematik.kether.abi.types.*
+import de.gematik.kether.contracts.Contract
+import de.gematik.kether.contracts.Event
+import de.gematik.kether.eth.Eth
+import de.gematik.kether.eth.types.*
+import de.gematik.kether.extensions.hexToByteArray
+import de.gematik.kether.extensions.keccak
+import kotlinx.serialization.ExperimentalSerializationApi
+import java.math.BigInteger
+@OptIn(ExperimentalSerializationApi::class)
+class Storage(
+eth: Eth,
+baseTransaction: Transaction = Transaction(),
+privateKey: BigInteger? = null
+) : Contract(eth, baseTransaction, privateKey) {
+companion object {
+// deployment
+// deployment data (bytecode) not available
+// 4 byte selectors (functions) and topics (events)
+val functionInc = "inc()".keccak().copyOfRange(0, 4)
+val functionRetrieve = "retrieve()".keccak().copyOfRange(0, 4)
+val functionStore = "store(uint256)".keccak().copyOfRange(0, 4)
+}
+// tuples
+// events
+override val listOfEventDecoders: List<(Log) -> Event?> = listOf()
+// functions
+suspend fun inc(): TransactionReceipt {
+val params = DataEncoder()
+.encode(Data4(functionInc)).build()
+return transact(params)
+}
+fun retrieve(): AbiUint256 {
+val params = DataEncoder()
+.encode(Data4(functionRetrieve)).build()
+val decoder = DataDecoder(call(params))
+return decoder.next(AbiUint256::class, ) as AbiUint256}
+suspend fun store(num: AbiUint256): TransactionReceipt {
+val params = DataEncoder()
+.encode(Data4(functionStore))
+.encode(num).build()
+return transact(params)
+}
+}

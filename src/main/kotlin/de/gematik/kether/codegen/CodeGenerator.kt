@@ -43,12 +43,14 @@ class CodeGenerator(
         import de.gematik.kether.extensions.hexToByteArray
         import de.gematik.kether.extensions.keccak
         import kotlinx.serialization.ExperimentalSerializationApi
+        import java.math.BigInteger
 
         @OptIn(ExperimentalSerializationApi::class)
         class $contractName(
             eth: Eth,
-            baseTransaction: Transaction = Transaction()
-        ) : Contract(eth, baseTransaction) {
+            baseTransaction: Transaction = Transaction(),
+            privateKey: BigInteger? = null
+        ) : Contract(eth, baseTransaction, privateKey) {
 
             companion object {
 
@@ -101,10 +103,9 @@ class CodeGenerator(
                 stringBuilderParams.append(".encode(${it.name})")
             }
             stringBuilderParams.append(".build().toByteArray()\n)\n")
-            if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
-            stringBuilder.append("): TransactionReceipt {\n")
+            stringBuilder.append(" privateKey: BigInteger? = null): TransactionReceipt {\n")
             stringBuilder.append(stringBuilderParams)
-            stringBuilder.append("return deploy(eth, from, params)\n}\n")
+            stringBuilder.append("return deploy(eth, from, params, privateKey)\n}\n")
         }
         return stringBuilder.toString()
     }
