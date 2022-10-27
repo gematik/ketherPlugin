@@ -26,7 +26,7 @@ class CodeGenTest {
         val code = CodeGenerator(
             "de.gematik.kether.codegen",
             File("src/test/kotlin/de/gematik/kether/codegen/Storage.abi"),
-            null
+            File("src/test/kotlin/de/gematik/kether/codegen/Storage.bin")
         ).generateCode()
         File("src/test/kotlin/de/gematik/kether/codegen/Storage.ref").writeText(code)
         assert(code.startsWith("package de.gematik.kether.codegen"))

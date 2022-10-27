@@ -8,48 +8,6 @@
     "inputs":
     [
       {
-        "internalType": "address",
-        "name": "protectionAuthorizationId",
-        "type": "address"
-      }
-    ],
-    "name": "RegisterProvider",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "UnregisterAllProviders",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "UnregisterAllResources",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs":
-    [
-      {
-        "internalType": "address",
-        "name": "protectionAuthorizationId",
-        "type": "address"
-      }
-    ],
-    "name": "UnregisterProvider",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs":
-    [
-      {
         "internalType": "uint256",
         "name": "protectedResourceId",
         "type": "uint256"
@@ -61,6 +19,20 @@
       }
     ],
     "name": "deleteRule",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "protectionAuthorizationId",
+        "type": "address"
+      }
+    ],
+    "name": "registerProvider",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -151,6 +123,34 @@
       }
     ],
     "name": "setRule",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unregisterAllProviders",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unregisterAllResources",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs":
+    [
+      {
+        "internalType": "address",
+        "name": "protectionAuthorizationId",
+        "type": "address"
+      }
+    ],
+    "name": "unregisterProvider",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

@@ -93,7 +93,7 @@ class CodeGenerator(
         }
         stringBuilder.append("val byteCode = \"0x$byteCode\".hexToByteArray()\n")
         if (constructors.isEmpty()) {
-            stringBuilder.append("fun deploy(eth:Eth, from: Address) = deploy(eth, from, Data(byteCode))")
+            stringBuilder.append("fun deploy(eth:Eth, from: Address, privateKey: BigInteger? = null) = deploy(eth, from, Data(byteCode), privateKey)")
         }
         constructors.forEach {
             stringBuilder.append("fun deploy(eth:Eth, from: Address,")
