@@ -23,7 +23,10 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
-    implementation("junit:junit:4.13.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")
+}
 
+tasks.test {
+    useJUnitPlatform()
 }

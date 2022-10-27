@@ -1,8 +1,6 @@
 package de.gematik.kether.codegen
 
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import java.io.File
 
 /**
