@@ -48,9 +48,8 @@ class CodeGenerator(
         @OptIn(ExperimentalSerializationApi::class)
         class $contractName(
             eth: Eth,
-            baseTransaction: Transaction = Transaction(),
-            privateKey: BigInteger? = null
-        ) : Contract(eth, baseTransaction, privateKey) {
+            baseTransaction: Transaction = Transaction()
+        ) : Contract(eth, baseTransaction) {
 
             companion object {
 
@@ -93,7 +92,7 @@ class CodeGenerator(
         }
         stringBuilder.append("val byteCode = \"0x$byteCode\".hexToByteArray()\n")
         if (constructors.isEmpty()) {
-            stringBuilder.append("fun deploy(eth:Eth, from: Address, privateKey: BigInteger? = null) = deploy(eth, from, Data(byteCode), privateKey)")
+            stringBuilder.append("fun deploy(eth:Eth, from: Address) = deploy(eth, from, Data(byteCode))")
         }
         constructors.forEach {
             stringBuilder.append("fun deploy(eth:Eth, from: Address,")
@@ -103,9 +102,10 @@ class CodeGenerator(
                 stringBuilderParams.append(".encode(${it.name})")
             }
             stringBuilderParams.append(".build().toByteArray()\n)\n")
-            stringBuilder.append(" privateKey: BigInteger? = null): TransactionReceipt {\n")
+            if (stringBuilder.last() == ',') { stringBuilder.deleteAt(stringBuilder.length - 1) }
+            stringBuilder.append("): TransactionReceipt {\n")
             stringBuilder.append(stringBuilderParams)
-            stringBuilder.append("return deploy(eth, from, params, privateKey)\n}\n")
+            stringBuilder.append("return deploy(eth, from, params)\n}\n")
         }
         return stringBuilder.toString()
     }
