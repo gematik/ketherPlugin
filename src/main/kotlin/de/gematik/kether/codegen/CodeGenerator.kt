@@ -304,7 +304,8 @@ class CodeGenerator(
                     stringBuilder.append(stringBuilderParams.toString())
                     stringBuilder.append("val decoder = DataDecoder(call(params))\n")
                     if (it.outputs != null && it.outputs.size == 1) {
-                        stringBuilder.append("return decoder.next(${it.outputs[0].typeNameStrippedDimension}::class, ${it.outputs[0].dimensions}) as ${it.outputs[0].typeName}")
+                        stringBuilder.append("return decoder.next(${it.outputs[0].typeNameStrippedDimension}::class")
+                        stringBuilder.append(if (it.outputs[0].dimensions.isNotEmpty()) ", ${it.outputs[0].dimensions})" else ")")
                     } else {
                         stringBuilder.append("return $resultClassName(\ndecoder")
                         it.outputs?.forEach {
