@@ -18,12 +18,15 @@ gradlePlugin {
 }
 
 repositories {
+    maven(url="https://repo.labor.gematik.de/repository/maven-public/")
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+    implementation("de.gematik.kether:solckt:0.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")
 }
 

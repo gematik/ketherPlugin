@@ -6,7 +6,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 
-private val json = Json { ignoreUnknownKeys = true }
+//private val json = Json { ignoreUnknownKeys = true }
 
 /**
  * Created by rk on 20.09.2022.
@@ -22,7 +22,7 @@ class CodeGenerator(
     constructor(packageName: String, abiFile: File, byteCodeFile: File?) : this(
         packageName,
         abiFile.name.substring(0, abiFile.name.indexOfLast { it == '.' }),
-        abi = json.decodeFromString(abiFile.readText(Charsets.UTF_8)),
+        abi = Json.decodeFromString(abiFile.readText(Charsets.UTF_8)),
         byteCode = byteCodeFile?.let {
             when (it.extension.lowercase()) {
                 "bytecode" -> Json.parseToJsonElement(it.readText(Charsets.UTF_8)).jsonObject.get("object")?.jsonPrimitive?.content
