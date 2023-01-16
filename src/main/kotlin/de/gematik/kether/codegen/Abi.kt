@@ -1,4 +1,4 @@
-package de.gematik.kether.codegen
+package de.gematik.`kether-plugin`.codegen
 
 import kotlinx.serialization.Serializable
 import org.gradle.configurationcache.extensions.capitalized

@@ -1,2 +1,2 @@
-rootProject.name = "kether-plugin"
+rootProject.name = "codegen"
 

@@ -1,4 +1,4 @@
-package de.gematik.kether.codegen
+package de.gematik.`kether-plugin`.codegen
 
 import org.gradle.api.provider.Property
 
