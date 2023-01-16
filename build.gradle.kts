@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "de.gematik.kether-plugin"
-version = "1.1"
+version = "1.2"
 
 gradlePlugin {
     plugins {
@@ -24,7 +24,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib"))
-    implementation("de.gematik.kether:solckt:0.0.1-SNAPSHOT")
+    implementation("de.gematik.kether:solckt:1.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")
 }
