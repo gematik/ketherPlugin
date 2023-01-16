@@ -1,8 +1,8 @@
 plugins {
     kotlin("jvm") version "1.7.10"
     kotlin("plugin.serialization") version "1.7.10"
-    `java-gradle-plugin`
-    `maven-publish`
+    id("maven-publish")
+    id("java-gradle-plugin")
 }
 
 group = "de.gematik.kether-plugin"
@@ -31,4 +31,12 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
 }
