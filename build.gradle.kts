@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "de.gematik.kether-plugin"
-version = "1.3"
+version = "1.3.1"
 
 gradlePlugin {
     plugins {
