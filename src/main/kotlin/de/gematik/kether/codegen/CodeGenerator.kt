@@ -103,7 +103,7 @@ class CodeGenerator(
             }
             stringBuilderParams.append(".build().toByteArray()\n)\n")
             if (stringBuilder.last() == ',') { stringBuilder.deleteAt(stringBuilder.length - 1) }
-            stringBuilder.append("): TransactionReceipt {\n")
+            stringBuilder.append("): Data32 {\n")
             stringBuilder.append(stringBuilderParams)
             stringBuilder.append("return deploy(eth, from, params)\n}\n")
         }
@@ -278,7 +278,7 @@ class CodeGenerator(
                     }
                     stringBuilderParams.append(".build()\n")
                     if (stringBuilder.last() == ',') stringBuilder.deleteAt(stringBuilder.length - 1)
-                    stringBuilder.append("): TransactionReceipt {\n")
+                    stringBuilder.append("): Data32 {\n")
                     stringBuilder.append(stringBuilderParams.toString())
                     stringBuilder.append("return transact(params)\n}\n")
                 } else {
