@@ -1,6 +1,39 @@
+<img align="right" width="250" height="47" src="Gematik_Logo_Flag_With_Background.png"/> <br/> 
+
 # Kether Plugin
 
-Gradle Plugin to generate smart contract kotlin stubs from abi/bytecodes files for use with kether lib. See kether lib for more details.
+<details>
+  <summary>Table of Contents</summary>
+  <ol>
+    <li>
+      <a href="#about-the-project">About The Project</a>
+	</li>
+    <li>
+      <a href="#getting-started">Getting Started</a>
+      <ul>
+        <li><a href="#prerequisites">Prerequisites</a></li>
+      </ul>
+    </li>
+    <li><a href="#usage">Usage</a></li>
+    <li><a href="#contributing">Contributing</a></li>
+    <li><a href="#license">License</a></li>
+  </ol>
+</details>
+
+## About The Project
+
+Gradle Plugin to generate smart contract kotlin stubs from abi/bytecodes files for use with [kether lib](https://github.com/gematik/poc-fue-kether).
+See [kether lib](https://github.com/gematik/poc-fue-kether) for more details.
+This Work ist part of a discontinued collaboration within [IDUnion project](https://idunion.org/projekt/?lang=en)
+
+## Usage
+Build and publish to MavenLocal with gradle, so it can be used by [kether lib](https://github.com/gematik/poc-fue-kether) project.
+
+### Prerequisites
+[kether-solckt](https://github.com/gematik/poc-fue-ketherSolckt) needs to be installed to MavenLocal. 
+
+## Contributing
+This project is part of a proof of concept which is no longer being maintained.
 
 ## License
 

@@ -18,7 +18,7 @@ gradlePlugin {
 }
 
 repositories {
-    maven(url="https://repo.labor.gematik.de/repository/maven-public/")
+    mavenLocal()
     mavenCentral()
 }
 
